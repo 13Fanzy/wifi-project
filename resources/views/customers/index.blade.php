@@ -5,6 +5,17 @@
 
 @section('content')
 <div class="space-y-6">
+    <!-- Back Button -->
+    <div>
+        <button type="button" onclick="history.back()"
+            class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-white rounded-lg border border-gray-300 hover:bg-gray-50 hover:text-gray-800 transition-colors shadow-sm">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Kembali
+        </button>
+    </div>
+
     <!-- Header with search and filter -->
     <div class="bg-white rounded-xl shadow-sm p-5">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

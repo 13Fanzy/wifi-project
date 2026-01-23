@@ -51,6 +51,35 @@ class UserController extends Controller
     }
 
     /**
+     * Tampilkan form edit user
+     */
+    public function edit(User $user)
+    {
+        return view('users.edit', compact('user'));
+    }
+
+    /**
+     * Update data user (nama, email, role)
+     */
+    public function update(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'role' => 'required|in:superadmin,admin',
+        ]);
+
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+        ]);
+
+        return redirect()->route('users.index')
+            ->with('success', "Data {$user->name} berhasil diupdate!");
+    }
+
+    /**
      * Update password user lain (superadmin only)
      */
     public function updatePassword(Request $request, User $user)
