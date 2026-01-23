@@ -1,0 +1,43 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
+
+// Auth routes
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Protected routes
+Route::middleware('auth')->group(function () {
+    // Dashboard
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Customers CRUD
+    Route::resource('customers', CustomerController::class);
+
+    // Payments
+    Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+
+    // Reports
+    Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/laporan/export', [ReportController::class, 'export'])->name('reports.export');
+
+    // Profile - Update password sendiri
+    Route::get('/profile/password', [UserController::class, 'showChangePassword'])->name('profile.password');
+    Route::put('/profile/password', [UserController::class, 'changePassword'])->name('profile.password.update');
+
+    // User Management (superadmin only)
+    Route::middleware('superadmin')->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.password.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+});
