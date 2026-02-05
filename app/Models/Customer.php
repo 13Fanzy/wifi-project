@@ -21,7 +21,7 @@ class Customer extends Model
     ];
 
     protected $casts = [
-        'paket_harga' => 'decimal:2',
+        'paket_harga' => 'integer',
         'tanggal_bergabung' => 'date',
         'status_aktif' => 'boolean',
     ];

@@ -84,7 +84,7 @@ class ReportController extends Controller
         $totalAktif = Customer::where('status_aktif', true)->count();
         $sudahBayar = count($customerIdsSudahBayar);
         $belumBayar = $totalAktif - $sudahBayar;
-        $totalPendapatan = Payment::where('bulan_tagihan', $bulan)->sum('jumlah_bayar');
+        $totalPendapatan = (int) Payment::where('bulan_tagihan', $bulan)->sum('jumlah_bayar');
 
         // Available years (from earliest payment to current year + 5 for advance payments)
         $earliestYear = Payment::min('bulan_tagihan');

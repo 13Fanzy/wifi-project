@@ -22,7 +22,7 @@ class Payment extends Model
 
     protected $casts = [
         'tanggal_bayar' => 'datetime',
-        'jumlah_bayar' => 'decimal:2',
+        'jumlah_bayar' => 'integer',
     ];
 
     /**
