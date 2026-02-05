@@ -123,6 +123,7 @@ class CustomerController extends Controller
 
     /**
      * Update data pelanggan
+     * Jika paket_harga berubah, otomatis update pembayaran bulan ini dan ke depan
      */
     public function update(Request $request, Customer $customer)
     {
@@ -137,11 +138,32 @@ class CustomerController extends Controller
 
         $validated['status_aktif'] = $request->has('status_aktif');
 
+        // Cek apakah paket_harga berubah
+        $oldPaketHarga = $customer->paket_harga;
+        $newPaketHarga = (int) $validated['paket_harga'];
+        $paketChanged = $oldPaketHarga != $newPaketHarga;
+
         $customer->update($validated);
+
+        // Jika paket berubah, update pembayaran bulan ini dan ke depan
+        $updatedPayments = 0;
+        if ($paketChanged) {
+            $bulanIni = Carbon::now()->format('Y-m');
+
+            // Update semua pembayaran >= bulan ini
+            $updatedPayments = Payment::where('customer_id', $customer->id)
+                ->where('bulan_tagihan', '>=', $bulanIni)
+                ->update(['jumlah_bayar' => $newPaketHarga]);
+        }
+
+        $message = 'Data pelanggan berhasil diperbarui!';
+        if ($updatedPayments > 0) {
+            $message .= " {$updatedPayments} pembayaran telah disesuaikan dengan paket baru.";
+        }
 
         return redirect()
             ->route('customers.show', $customer)
-            ->with('success', 'Data pelanggan berhasil diperbarui!');
+            ->with('success', $message);
     }
 
     /**

@@ -214,7 +214,7 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pelanggan</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nomor WA</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Paket</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Jumlah</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal Bayar</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -241,7 +241,14 @@
                             {{ $customer->nomor_wa ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            @if($customer->sudah_bayar && $customer->payment)
+                            Rp {{ number_format($customer->payment->jumlah_bayar, 0, ',', '.') }}
+                            @if($customer->payment->jumlah_bayar != $customer->paket_harga)
+                            <span class="text-xs text-gray-400">(paket: {{ number_format($customer->paket_harga, 0, ',', '.') }})</span>
+                            @endif
+                            @else
                             Rp {{ number_format($customer->paket_harga, 0, ',', '.') }}
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($customer->sudah_bayar && $customer->payment)
@@ -347,7 +354,14 @@
 
                 <!-- Customer Details -->
                 <div class="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                    @if($customer->sudah_bayar && $customer->payment)
+                    <span class="font-semibold text-indigo-600">Rp {{ number_format($customer->payment->jumlah_bayar, 0, ',', '.') }}</span>
+                    @if($customer->payment->jumlah_bayar != $customer->paket_harga)
+                    <span class="text-xs text-gray-400">(paket: {{ number_format($customer->paket_harga, 0, ',', '.') }})</span>
+                    @endif
+                    @else
                     <span class="font-semibold text-indigo-600">Rp {{ number_format($customer->paket_harga, 0, ',', '.') }}</span>
+                    @endif
                     @if($customer->sudah_bayar && $customer->payment)
                     <span class="text-xs text-gray-500">{{ $customer->payment->tanggal_bayar->format('d M Y') }}</span>
                     @endif
