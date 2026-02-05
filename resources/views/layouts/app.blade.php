@@ -7,6 +7,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'WiFi Management') - Admin</title>
 
+    <!-- Favicon WiFi -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M12 21l-1.5-1.5c-2.5-2.5-4-4.5-4-7 0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5c0 2.5-1.5 4.5-4 7L12 21z'/><circle cx='12' cy='12.5' r='2' fill='white'/><path d='M1.4 9.4l1.4 1.4c4.7-4.7 12.3-4.7 17 0l1.4-1.4C15.6 3.8 6.6 3.8 1.4 9.4z' fill='%234f46e5'/><path d='M5.1 13.1l1.4 1.4c2.3-2.3 6-2.3 8.3 0l1.4-1.4c-3-3-8-3-11.1 0z' fill='%234f46e5'/></svg>">
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%234f46e5' d='M12 3C7.95 3 4.21 4.34 1.2 6.6L3 9c2.5-1.88 5.62-3 9-3s6.5 1.12 9 3l1.8-2.4C19.79 4.34 16.05 3 12 3zm0 6c-2.62 0-5 .88-6.84 2.4L6.6 13.2c1.44-1.08 3.18-1.2 5.4-1.2s3.96.12 5.4 1.2l1.44-1.8C17 9.88 14.62 9 12 9zm0 6c-1.08 0-2.06.3-2.88.84L12 20l2.88-4.16A5.14 5.14 0 0012 15z'/></svg>">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
