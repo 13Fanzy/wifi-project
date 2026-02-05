@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
 
     // Payments
     Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 
     // Reports
     Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');

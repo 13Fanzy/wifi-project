@@ -51,20 +51,26 @@ class ReportController extends Controller
                 });
             }
         } else {
-            // Bulan sebelumnya (history): Fokus pada yang sudah bayar untuk tracking pendapatan
+            // Bulan sebelumnya (history): 
+            // - Hanya tampilkan pelanggan yang sudah bergabung pada bulan tersebut
+            // - Pelanggan bisa bayar untuk bulan lalu dengan status Terlambat
+            $bulanAkhir = Carbon::createFromFormat('Y-m', $bulan)->endOfMonth()->format('Y-m-d');
+
             if ($filter === 'sudah_bayar') {
                 // Semua yang sudah bayar bulan itu (termasuk yang tidak aktif)
                 $query = Customer::whereIn('id', $customerIdsSudahBayar);
             } elseif ($filter === 'belum_bayar') {
-                // Untuk history, tidak menampilkan yang belum bayar dari pelanggan tidak aktif
-                // Hanya tampilkan pelanggan aktif yang tidak ada pembayaran di bulan tersebut
+                // Pelanggan aktif yang belum bayar DAN sudah bergabung pada bulan tersebut
                 $query = Customer::where('status_aktif', true)
-                    ->whereNotIn('id', $customerIdsSudahBayar);
+                    ->whereNotIn('id', $customerIdsSudahBayar)
+                    ->whereDate('tanggal_bergabung', '<=', $bulanAkhir);
             } else {
-                // Semua: Tampilkan pelanggan yang sudah bayar + pelanggan aktif
-                $query = Customer::where(function ($q) use ($customerIdsSudahBayar) {
-                    $q->where('status_aktif', true)
-                        ->orWhereIn('id', $customerIdsSudahBayar);
+                // Semua: Pelanggan yang sudah bayar + pelanggan aktif yang sudah bergabung
+                $query = Customer::where(function ($q) use ($customerIdsSudahBayar, $bulanAkhir) {
+                    $q->where(function ($q2) use ($bulanAkhir) {
+                        $q2->where('status_aktif', true)
+                            ->whereDate('tanggal_bergabung', '<=', $bulanAkhir);
+                    })->orWhereIn('id', $customerIdsSudahBayar);
                 });
             }
         }
