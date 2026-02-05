@@ -55,12 +55,15 @@ Route::get('/debug-payments', function () {
 
     $totalSum = $payments->sum('jumlah_bayar');
     $count = $payments->count();
+    $totalPaketHarga = $payments->sum(fn($p) => $p->customer->paket_harga ?? 0);
 
     return response()->json([
         'bulan' => $bulanIni,
         'total_pembayaran' => $count,
         'total_pendapatan' => $totalSum,
         'formatted' => 'Rp ' . number_format($totalSum, 0, ',', '.'),
+        'total_paket_harga' => $totalPaketHarga,
+        'formatted_paket_harga' => 'Rp ' . number_format($totalPaketHarga, 0, ',', '.'),
         'detail_pembayaran' => $payments->map(function ($p) {
             return [
                 'id' => $p->id,
