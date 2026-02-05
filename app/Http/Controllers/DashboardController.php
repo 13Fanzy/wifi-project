@@ -35,8 +35,8 @@ class DashboardController extends Controller
             ->whereNotIn('id', $customerIdsSudahBayar)
             ->count();
 
-        // Total pendapatan bulan ini
-        $totalPendapatan = Payment::where('bulan_tagihan', $bulanIni)
+        // Total pendapatan bulan ini (cast ke integer untuk akurasi)
+        $totalPendapatan = (int) Payment::where('bulan_tagihan', $bulanIni)
             ->sum('jumlah_bayar');
 
         // Pelanggan overdue (belum bayar dan sudah lewat tanggal 7)
