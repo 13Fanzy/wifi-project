@@ -79,7 +79,33 @@ class ReportController extends Controller
         $perPage = min((int) $request->input('per_page', 15), 100);
         $customers = $query->orderBy('nama')->paginate($perPage);
 
-        // Append payment info ke setiap customer
+        // Get ALL customers for search (without pagination limits)
+        $allCustomersForSearch = (clone $query)->orderBy('nama')->get()->map(function ($customer) use ($bulan, $customerIdsSudahBayar, $currentMonth) {
+            $bulanBergabung = Carbon::parse($customer->tanggal_bergabung)->format('Y-m');
+            $isPastMonth = $bulan < $currentMonth;
+            $payment = $customer->getPaymentForMonth($bulan);
+
+            return [
+                'id' => $customer->id,
+                'nama' => $customer->nama,
+                'alamat' => $customer->alamat,
+                'nomor_wa' => $customer->nomor_wa,
+                'paket_harga' => $customer->paket_harga,
+                'status_aktif' => $customer->status_aktif,
+                'tanggal_bergabung' => $customer->tanggal_bergabung,
+                'sudah_bayar' => in_array($customer->id, $customerIdsSudahBayar),
+                'payment' => $payment ? [
+                    'id' => $payment->id,
+                    'jumlah_bayar' => $payment->jumlah_bayar,
+                    'status_pembayaran' => $payment->status_pembayaran,
+                    'tanggal_bayar' => $payment->tanggal_bayar->format('d M Y, H:i'),
+                ] : null,
+                'can_pay' => !in_array($customer->id, $customerIdsSudahBayar) && $customer->status_aktif && $bulan >= $bulanBergabung,
+                'is_past_month' => $isPastMonth,
+            ];
+        });
+
+        // Append payment info ke setiap customer (for paginated view)
         $customers->getCollection()->transform(function ($customer) use ($bulan, $customerIdsSudahBayar) {
             $customer->sudah_bayar = in_array($customer->id, $customerIdsSudahBayar);
             $customer->payment = $customer->getPaymentForMonth($bulan);
@@ -121,6 +147,7 @@ class ReportController extends Controller
 
         return view('reports.index', compact(
             'customers',
+            'allCustomersForSearch',
             'bulan',
             'bulanAngka',
             'tahun',

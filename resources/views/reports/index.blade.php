@@ -8,9 +8,14 @@
     showPaymentModal: false, 
     selectedCustomer: null,
     searchQuery: '',
-    filterBySearch(nama) {
-        if (!this.searchQuery.trim()) return true;
-        return nama.toLowerCase().includes(this.searchQuery.toLowerCase());
+    allCustomers: {{ Js::from($allCustomersForSearch) }},
+    get searchResults() {
+        if (!this.searchQuery.trim()) return [];
+        const query = this.searchQuery.toLowerCase();
+        return this.allCustomers.filter(c => c.nama.toLowerCase().includes(query));
+    },
+    get isSearching() {
+        return this.searchQuery.trim().length > 0;
     }
 }" class="space-y-6">
     <!-- Back Button -->
@@ -221,8 +226,78 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- Search Results (shown when searching) -->
+                    <template x-if="isSearching">
+                        <template x-for="(customer, index) in searchResults" :key="customer.id">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="index + 1"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-medium" :class="!customer.status_aktif ? 'text-gray-400 line-through' : 'text-gray-900'" x-text="customer.nama"></span>
+                                        <span x-show="!customer.status_aktif" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600">Tidak Aktif</span>
+                                    </div>
+                                    <div class="text-sm text-gray-500 truncate max-w-xs" x-text="customer.alamat || '-'"></div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="customer.nomor_wa || '-'"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <span x-text="'Rp ' + (customer.sudah_bayar && customer.payment ? customer.payment.jumlah_bayar : customer.paket_harga).toLocaleString('id-ID')"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <template x-if="customer.sudah_bayar && customer.payment">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
+                                            :class="{
+                                                'bg-green-100 text-green-800 border-green-200': customer.payment.status_pembayaran === 'Lebih Awal',
+                                                'bg-blue-100 text-blue-800 border-blue-200': customer.payment.status_pembayaran === 'Tepat Waktu',
+                                                'bg-orange-100 text-orange-800 border-orange-200': customer.payment.status_pembayaran === 'Terlambat',
+                                                'bg-gray-100 text-gray-800 border-gray-200': !['Lebih Awal', 'Tepat Waktu', 'Terlambat'].includes(customer.payment.status_pembayaran)
+                                            }"
+                                            x-text="customer.payment.status_pembayaran">
+                                        </span>
+                                    </template>
+                                    <template x-if="!customer.sudah_bayar && {{ $isOverduePeriod ? 'true' : 'false' }}">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">Menunggak</span>
+                                    </template>
+                                    <template x-if="!customer.sudah_bayar && !{{ $isOverduePeriod ? 'true' : 'false' }}">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">Belum Bayar</span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <span x-text="customer.payment ? customer.payment.tanggal_bayar : '-'" :class="{ 'text-gray-400': !customer.payment }"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                    <template x-if="customer.can_pay">
+                                        <button type="button"
+                                            @click="showPaymentModal = true; selectedCustomer = { id: customer.id, nama: customer.nama, paket: customer.paket_harga }"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-colors"
+                                            :class="customer.is_past_month ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <span x-text="customer.is_past_month ? 'Bayar (Telat)' : 'Bayar'"></span>
+                                        </button>
+                                    </template>
+                                    <template x-if="!customer.can_pay">
+                                        <a :href="'/customers/' + customer.id"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-colors">
+                                            Detail
+                                        </a>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </template>
+                    <!-- Empty search results -->
+                    <tr x-show="isSearching && searchResults.length === 0">
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <p class="mt-4 text-sm text-gray-500">Tidak ada hasil untuk "<span x-text="searchQuery"></span>"</p>
+                        </td>
+                    </tr>
+                    <!-- Paginated Results (shown when NOT searching) -->
                     @forelse($customers as $index => $customer)
-                    <tr x-show="filterBySearch('{{ addslashes($customer->nama) }}')" class="hover:bg-gray-50 transition-colors">
+                    <tr x-show="!isSearching" class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $customers->firstItem() + $index }}
                         </td>
@@ -327,7 +402,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
+                    <tr x-show="!isSearching">
                         <td colspan="7" class="px-6 py-12 text-center">
                             <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -342,8 +417,79 @@
 
         <!-- Mobile Card Layout (shown only on mobile) -->
         <div class="md:hidden divide-y divide-gray-200">
+            <!-- Search Results (Mobile) -->
+            <template x-if="isSearching">
+                <template x-for="(customer, index) in searchResults" :key="customer.id">
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <!-- Customer Name & Status -->
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-sm font-medium" :class="!customer.status_aktif ? 'text-gray-400 line-through' : 'text-gray-900'" x-text="customer.nama"></span>
+                                    <span x-show="!customer.status_aktif" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600">Tidak Aktif</span>
+                                </div>
+                            </div>
+                            <!-- Payment Status Badge -->
+                            <div class="ml-2 flex-shrink-0">
+                                <template x-if="customer.sudah_bayar && customer.payment">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                        :class="{
+                                            'bg-green-100 text-green-800': customer.payment.status_pembayaran === 'Lebih Awal',
+                                            'bg-blue-100 text-blue-800': customer.payment.status_pembayaran === 'Tepat Waktu',
+                                            'bg-orange-100 text-orange-800': customer.payment.status_pembayaran === 'Terlambat',
+                                            'bg-gray-100 text-gray-800': !['Lebih Awal', 'Tepat Waktu', 'Terlambat'].includes(customer.payment.status_pembayaran)
+                                        }"
+                                        x-text="customer.payment.status_pembayaran">
+                                    </span>
+                                </template>
+                                <template x-if="!customer.sudah_bayar && {{ $isOverduePeriod ? 'true' : 'false' }}">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Menunggak</span>
+                                </template>
+                                <template x-if="!customer.sudah_bayar && !{{ $isOverduePeriod ? 'true' : 'false' }}">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Belum Bayar</span>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Customer Details -->
+                        <div class="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                            <span class="font-semibold text-indigo-600" x-text="'Rp ' + (customer.sudah_bayar && customer.payment ? customer.payment.jumlah_bayar : customer.paket_harga).toLocaleString('id-ID')"></span>
+                            <span x-show="customer.payment" class="text-xs text-gray-500" x-text="customer.payment ? customer.payment.tanggal_bayar : ''"></span>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="mt-3">
+                            <template x-if="customer.can_pay">
+                                <button type="button"
+                                    @click="showPaymentModal = true; selectedCustomer = { id: customer.id, nama: customer.nama, paket: customer.paket_harga }"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+                                    :class="customer.is_past_month ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    <span x-text="customer.is_past_month ? 'Bayar Telat' : 'Bayar Sekarang'"></span>
+                                </button>
+                            </template>
+                            <template x-if="!customer.can_pay">
+                                <a :href="'/customers/' + customer.id"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-colors">
+                                    Lihat Detail
+                                </a>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </template>
+            <!-- Empty search results (Mobile) -->
+            <div x-show="isSearching && searchResults.length === 0" class="p-8 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p class="mt-4 text-sm text-gray-500">Tidak ada hasil untuk "<span x-text="searchQuery"></span>"</p>
+            </div>
+            <!-- Paginated Results (Mobile) -->
             @forelse($customers as $index => $customer)
-            <div x-show="filterBySearch('{{ addslashes($customer->nama) }}')" class="p-4 hover:bg-gray-50 transition-colors">
+            <div x-show="!isSearching" class="p-4 hover:bg-gray-50 transition-colors">
                 <!-- Customer Name & Status -->
                 <div class="flex items-start justify-between">
                     <div class="flex-1 min-w-0">
@@ -435,7 +581,7 @@
                 </div>
             </div>
             @empty
-            <div class="p-8 text-center">
+            <div x-show="!isSearching" class="p-8 text-center">
                 <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
@@ -448,7 +594,14 @@
         <div class="px-4 py-4 bg-gray-50 border-t border-gray-200">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="text-sm text-gray-600">
-                    Menampilkan {{ $customers->firstItem() ?? 0 }} - {{ $customers->lastItem() ?? 0 }} dari <span class="font-semibold">{{ $customers->total() }}</span> pelanggan
+                    <!-- Search Info -->
+                    <span x-show="isSearching">
+                        Ditemukan <span class="font-semibold" x-text="searchResults.length"></span> pelanggan
+                    </span>
+                    <!-- Paginated Info -->
+                    <span x-show="!isSearching">
+                        Menampilkan {{ $customers->firstItem() ?? 0 }} - {{ $customers->lastItem() ?? 0 }} dari <span class="font-semibold">{{ $customers->total() }}</span> pelanggan
+                    </span>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 text-xs">
                     <div class="flex items-center">
@@ -474,9 +627,9 @@
             </div>
         </div>
 
-        <!-- Pagination -->
+        <!-- Pagination (hidden when searching) -->
         @if($customers->hasPages())
-        <div class="px-4 py-4 border-t border-gray-200 bg-white">
+        <div x-show="!isSearching" class="px-4 py-4 border-t border-gray-200 bg-white">
             {{ $customers->appends(['bulan_angka' => $bulanAngka, 'tahun' => $tahun, 'status' => $filter, 'per_page' => $perPage])->links() }}
         </div>
         @endif
