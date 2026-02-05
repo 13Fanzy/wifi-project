@@ -43,3 +43,36 @@ Route::middleware('auth')->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 });
+
+// DEBUG: Route untuk melihat detail pembayaran (hapus setelah debugging)
+Route::get('/debug-payments', function () {
+    $bulanIni = \Carbon\Carbon::now()->format('Y-m');
+
+    $payments = \App\Models\Payment::where('bulan_tagihan', $bulanIni)
+        ->with('customer:id,nama,paket_harga,status_aktif')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $totalSum = $payments->sum('jumlah_bayar');
+    $count = $payments->count();
+
+    return response()->json([
+        'bulan' => $bulanIni,
+        'total_pembayaran' => $count,
+        'total_pendapatan' => $totalSum,
+        'formatted' => 'Rp ' . number_format($totalSum, 0, ',', '.'),
+        'detail_pembayaran' => $payments->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'customer_id' => $p->customer_id,
+                'customer_nama' => $p->customer->nama ?? 'DELETED',
+                'customer_aktif' => $p->customer->status_aktif ?? false,
+                'customer_paket' => $p->customer->paket_harga ?? 0,
+                'jumlah_bayar' => $p->jumlah_bayar,
+                'bulan_tagihan' => $p->bulan_tagihan,
+                'tanggal_bayar' => $p->tanggal_bayar->format('Y-m-d H:i:s'),
+                'status' => $p->status_pembayaran,
+            ];
+        })
+    ]);
+})->middleware('auth');
